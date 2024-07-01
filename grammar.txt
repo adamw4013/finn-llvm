@@ -1,0 +1,68 @@
+program     -> declaration* EOF
+
+declaration -> func_decl
+             | struct_decl
+             | enum_decl
+             | impl_decl
+             | import_decl
+
+import_decl -> "import" IDENT ( "::" ( IDENT | "{" IDENT ( "," IDENT )* "}" ) )* ";"
+
+class_decl  -> ( ( "public" | "private" ) "type" )? "class" IDENT ( "<" ( "imply" )? ( ".." )? IDENT ">" )? "{" 
+                ( var_decl | const_decl )*
+                ( ( "public" | "private" ) ":" ( IDENT "(" arg_decl ( "," arg_decl )? ")" | func_decl* ) )
+
+               "}"
+
+func_decl   -> "func" IDENT ( "<" ( "imply" )? "type" ( ".." )? IDENT ">" )? "(" arg_decl ( "," arg_decl )? ")" ":" types "?" types block_stmt
+
+struct_decl -> "struct" IDENT ( "<" ( "imply" )? "type" ( ".." )? IDENT ">" )? "{"
+                    IDENT ":" types ( "," IDENT ":" types )?
+               "}"
+
+enum_decl   -> "enum" ( "<" IDENT ">" )? IDENT "{" 
+
+               "}"
+
+eeffoc      -> var_decl
+             | const_decl
+             | statement
+
+const_decl  -> "const" IDENT ( ":" types )? "=" expression ";"
+             | "const" IDENT ":=" expression ";"
+
+var_decl    -> IDENT (":" types)? "=" expression ";"
+             | IDENT ":=" expression ";"
+
+types       -> IDENT ( "|" IDENT )?
+
+statement   -> expr_stmt
+             | if_stmt
+             | block_stmt
+             | func_call
+
+if_stmt     -> "if" expression block_stmt ( "else" block_stmt )?
+
+block_stmt  -> "{" eeffoc* "}"
+
+expr_stmt   -> expression ( ";" | "\n" | EOF )
+
+expression  -> equality
+equality    -> comparison ( ( "==" | "!=" ) comparison )*
+comparison  -> factor ( ( ">" | ">=" | "<" | "<=" ) factor )*
+range       -> term ".." term
+term        -> factor ( ( "+" | "-" ) factor )*
+factor      -> exp ( ( "*" | "/" ) exp )*
+exp         -> suffix ( "**" suffix )*
+suffix      -> prefix ( "++" | "--" | "?" | "!" )* 
+prefix      -> ( "-" | ".." | "*" | "&" )* ( prefix | func_call )
+func_call   -> primary ( "::" primary | "(" arguments? ")" )*
+arguments   -> arg_decl ( "," arg_decl )*
+arg_decl    -> primary ":" types ( "=" expression )?
+primary     -> IDENT | STRING | NUMBER | BOOL | "nil" | grouping
+grouping    -> "(" expression ")"
+
+IDENT       -> ( A-Za-z ( A-Za-z0-9 )? )*
+STRING      -> "\"" ( A-Za-z0-9 )* "\""
+NUMBER      -> ( 0-9 )*
+BOOL        -> "true" | "false"
